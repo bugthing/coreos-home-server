@@ -1,0 +1,76 @@
+variant: fcos
+version: 1.4.0
+passwd:
+  users:
+    - name: core
+      ssh_authorized_keys:
+        - ssh-rsa NOTREALLYSECRET
+storage:
+  disks:
+    - device: /dev/disk/by-id/scsi-SATA_WDC_WD101EDBZ-11_VCHSZ4WP
+      wipe_table: true
+      partitions:
+        - number: 1
+          label: raid.1.1
+          start_mib: 0
+    - device: /dev/disk/by-id/scsi-SATA_TOSHIBA_MG06ACA1_90H0A1HTFKQE
+      wipe_table: true
+      partitions:
+        - number: 1
+          label: raid.1.2
+          start_mib: 0
+  raid:
+    - name: backup
+      level: mirror
+      devices:
+        - /dev/disk/by-partlabel/raid.1.1
+        - /dev/disk/by-partlabel/raid.1.2
+  filesystems:
+    - device: /dev/md/backup
+      path: /var/lib/backup
+      format: ext4
+      label: BACKUP
+      with_mount_unit: true
+  files:
+    - path: /etc/sysctl.d/20-silence-audit.conf
+      mode: 0644
+      contents:
+        inline: |
+          # change console message logging level from DEBUG (7) to WARNING (4)
+          # to hide audit messages from the interactive console
+          kernel.printk=4
+    - path: /etc/hostname
+      mode: 0644
+      contents:
+        inline: |
+          baller
+    - path: /etc/yum.repos.d/kubernetes.repo
+      mode: 0644
+      contents:
+        inline: |
+          [kubernetes]
+          name=Kubernetes
+          baseurl=https://packages.cloud.google.com/yum/repos/kubernetes-el7-x86_64
+          enabled=1
+          gpgcheck=1
+          repo_gpgcheck=1
+          gpgkey=https://packages.cloud.google.com/yum/doc/yum-key.gpg https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg
+systemd:
+  units:
+    - name: docker.compose.service
+      enabled: true
+      contents: |
+        [Unit]
+        Description=Get Docker Compose
+        After=docker.service
+        Requires=docker.service network.target network-online.target
+
+        [Service]
+        Type=oneshot
+        RemainAfterExit=yes
+        TimeoutStartSec=0
+        ExecStartPre=-curl -L https://github.com/docker/compose/releases/latest/download/docker-compose-linux-x86_64 -o /usr/local/bin/docker-compose
+        ExecStart=-chmod +x /usr/local/bin/docker-compose
+
+        [Install]
+        WantedBy=multi-user.target
