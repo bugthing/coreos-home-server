@@ -4,32 +4,43 @@ passwd:
   users:
     - name: core
       ssh_authorized_keys:
-        - ssh-rsa NOTREALLYSECRET
+        - ssh-rsa AAAA..
 storage:
   disks:
     - device: /dev/disk/by-id/scsi-SATA_WDC_WD101EDBZ-11_VCHSZ4WP
-      wipe_table: true
+      wipe_table: false
       partitions:
         - number: 1
           label: raid.1.1
           start_mib: 0
     - device: /dev/disk/by-id/scsi-SATA_TOSHIBA_MG06ACA1_90H0A1HTFKQE
-      wipe_table: true
+      wipe_table: false
       partitions:
         - number: 1
           label: raid.1.2
           start_mib: 0
+    - device: /dev/disk/by-id/scsi-0ATA_WDC_WD10EZRX-00L_WD-WCC4J4319928
+      wipe_table: true
+      partitions:
+        - number: 1
+          label: hdd.1tb
+          start_mib: 0
   raid:
-    - name: backup
+    - name: data
       level: mirror
       devices:
         - /dev/disk/by-partlabel/raid.1.1
         - /dev/disk/by-partlabel/raid.1.2
   filesystems:
-    - device: /dev/md/backup
-      path: /var/lib/backup
+    - device: /dev/md/data
+      path: /var/lib/data
       format: ext4
-      label: BACKUP
+      label: DATA
+      with_mount_unit: true
+    - device: /dev/disk/by-partlabel/hdd.1tb
+      path: /var/lib/volumes
+      format: ext4
+      label: VOLUMES
       with_mount_unit: true
   files:
     - path: /etc/sysctl.d/20-silence-audit.conf
@@ -55,22 +66,52 @@ storage:
           gpgcheck=1
           repo_gpgcheck=1
           gpgkey=https://packages.cloud.google.com/yum/doc/yum-key.gpg https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg
+    - path: /etc/docker/compose/home-server/docker-compose.yml
+      mode: 0700
+      contents:
+        inline: |
+          version: '3'
+          services:
+            test:
+              image: nginx
+              restart: always
+              ports:
+                - "8080:80"
 systemd:
   units:
-    - name: docker.compose.service
+    - name: rpm-ostree-install.service
       enabled: true
       contents: |
         [Unit]
-        Description=Get Docker Compose
-        After=docker.service
-        Requires=docker.service network.target network-online.target
+        Description=Layer in packages via rpm-ostree
+        Wants=network-online.target
+        After=network-online.target
+        Before=zincati.service
+        ConditionPathExists=!/var/lib/%N.stamp
 
         [Service]
         Type=oneshot
         RemainAfterExit=yes
-        TimeoutStartSec=0
-        ExecStartPre=-curl -L https://github.com/docker/compose/releases/latest/download/docker-compose-linux-x86_64 -o /usr/local/bin/docker-compose
-        ExecStart=-chmod +x /usr/local/bin/docker-compose
+        ExecStart=/usr/bin/rpm-ostree install --apply-live --allow-inactive neovim tmux smartmontools dmidecode docker-compose
+        ExecStart=/bin/touch /var/lib/%N.stamp
+
+        [Install]
+        WantedBy=multi-user.target
+    - name: docker.compose.up.service
+      enabled: true
+      contents: |
+        [Unit]
+        Description=Docker Compose Up (using /etc/docker/compose/home-server/docker-compose.yml)
+        Requires=docker.service
+        After=docker.service
+        ConditionPathExists=/usr/local/bin/docker-compose
+
+        [Service]
+        Type=oneshot
+        RemainAfterExit=true
+        WorkingDirectory=/etc/docker/compose/home-server
+        ExecStart=/usr/local/bin/docker-compose up -d --remove-orphans
+        ExecStop=/usr/local/bin/docker-compose down
 
         [Install]
         WantedBy=multi-user.target
