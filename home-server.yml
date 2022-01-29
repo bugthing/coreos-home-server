@@ -104,7 +104,7 @@ systemd:
         Description=Docker Compose Up (using /etc/docker/compose/home-server/docker-compose.yml)
         Requires=docker.service
         After=docker.service
-        ConditionPathExists=/usr/local/bin/docker-compose
+        After=rpm-ostree-install.service
 
         [Service]
         Type=oneshot
