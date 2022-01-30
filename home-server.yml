@@ -19,8 +19,20 @@ storage:
         - number: 1
           label: raid.1.2
           start_mib: 0
+    - device: /dev/disk/by-id/scsi-SATA_ST31500341AS_9VS25EQQ
+      wipe_table: false
+      partitions:
+        - number: 1
+          label: raid.0.1
+          start_mib: 0
+    - device: /dev/disk/by-id/scsi-SATA_SAMSUNG_HD154UI_S1XWJ1AZ900426
+      wipe_table: false
+      partitions:
+        - number: 1
+          label: raid.0.2
+          start_mib: 0
     - device: /dev/disk/by-id/scsi-0ATA_WDC_WD10EZRX-00L_WD-WCC4J4319928
-      wipe_table: true
+      wipe_table: false
       partitions:
         - number: 1
           label: hdd.1tb
@@ -31,11 +43,21 @@ storage:
       devices:
         - /dev/disk/by-partlabel/raid.1.1
         - /dev/disk/by-partlabel/raid.1.2
+    - name: media
+      level: stripe
+      devices:
+        - /dev/disk/by-partlabel/raid.0.1
+        - /dev/disk/by-partlabel/raid.0.2
   filesystems:
     - device: /dev/md/data
       path: /var/lib/data
       format: ext4
       label: DATA
+      with_mount_unit: true
+    - device: /dev/md/media
+      path: /var/lib/media
+      format: ext4
+      label: MEDIA
       with_mount_unit: true
     - device: /dev/disk/by-partlabel/hdd.1tb
       path: /var/lib/volumes
