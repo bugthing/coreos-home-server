@@ -7,18 +7,6 @@ passwd:
         - ssh-rsa AAAA..
 storage:
   disks:
-    - device: /dev/disk/by-id/scsi-SATA_WDC_WD101EDBZ-11_VCHSZ4WP
-      wipe_table: false
-      partitions:
-        - number: 1
-          label: raid.1.1
-          start_mib: 0
-    - device: /dev/disk/by-id/scsi-SATA_TOSHIBA_MG06ACA1_90H0A1HTFKQE
-      wipe_table: false
-      partitions:
-        - number: 1
-          label: raid.1.2
-          start_mib: 0
     - device: /dev/disk/by-id/scsi-SATA_ST31500341AS_9VS25EQQ
       wipe_table: false
       partitions:
@@ -31,50 +19,61 @@ storage:
         - number: 1
           label: raid.0.2
           start_mib: 0
-    - device: /dev/disk/by-id/scsi-0ATA_WDC_WD10EZRX-00L_WD-WCC4J4319928
+    - device: /dev/disk/by-id/scsi-SATA_WDC_WD101EDBZ-11_VCHSZ4WP
+      wipe_table: false
+      partitions:
+        - number: 1
+          label: raid.1.1
+          start_mib: 0
+    - device: /dev/disk/by-id/scsi-SATA_TOSHIBA_MG06ACA1_90H0A1HTFKQE
+      wipe_table: false
+      partitions:
+        - number: 1
+          label: raid.1.2
+          start_mib: 0
+    - device: /dev/disk/by-id/scsi-SATA_WDC_WD10EZRX-00L_WD-WCC4J4319928
       wipe_table: false
       partitions:
         - number: 1
           label: hdd.1tb
           start_mib: 0
   raid:
-    - name: data
-      level: mirror
-      devices:
-        - /dev/disk/by-partlabel/raid.1.1
-        - /dev/disk/by-partlabel/raid.1.2
     - name: media
       level: stripe
       devices:
         - /dev/disk/by-partlabel/raid.0.1
         - /dev/disk/by-partlabel/raid.0.2
+    - name: data
+      level: mirror
+      devices:
+        - /dev/disk/by-partlabel/raid.1.1
+        - /dev/disk/by-partlabel/raid.1.2
   filesystems:
-    - device: /dev/md/data
-      path: /var/lib/data
-      format: ext4
-      label: DATA
-      with_mount_unit: true
     - device: /dev/md/media
       path: /var/lib/media
-      format: ext4
       label: MEDIA
       with_mount_unit: true
+      format: ext4
+    - device: /dev/md/data
+      path: /var/lib/data
+      label: DATA
+      with_mount_unit: true
+      format: ext4
     - device: /dev/disk/by-partlabel/hdd.1tb
       path: /var/lib/volumes
-      format: btrfs
       label: VOLUMES
       with_mount_unit: true
+      format: btrfs
       mount_options:
-        - compress=lzo
-        - discard=async
-        - space_cache
+        - compress=zstd
+        - noatime
+        - nodiratime
   files:
     - path: /etc/sysctl.d/20-silence-audit.conf
       mode: 0644
       contents:
         inline: |
           # change console message logging level from DEBUG (7) to WARNING (4)
-          # to hide audit messages from the interactive console
           kernel.printk=4
     - path: /etc/hostname
       mode: 0644
