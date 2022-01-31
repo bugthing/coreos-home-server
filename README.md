@@ -28,7 +28,7 @@ this config sets a ssh key, hostname, console message level and the kubernetes y
 
 Convert to an ignition file
 
-      docker run -it --rm -v $PWD/home-server.yml:/home-server.yml quay.io/coreos/butane:release --pretty --strict /home-server.yml > home-server.ign
+      docker run -it --rm -v $PWD/:/bld quay.io/coreos/butane:release --pretty --strict /bld/home-server.yml --files-dir /bld > home-server.ign
 
 Make .ign file available from my laptop
 

@@ -1,0 +1,7 @@
+version: '3'
+services:
+  test:
+    image: nginx
+    restart: always
+    ports:
+      - "8080:80"

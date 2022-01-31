@@ -61,9 +61,13 @@ storage:
       with_mount_unit: true
     - device: /dev/disk/by-partlabel/hdd.1tb
       path: /var/lib/volumes
-      format: ext4
+      format: btrfs
       label: VOLUMES
       with_mount_unit: true
+      mount_options:
+        - compress=lzo
+        - discard=async
+        - space_cache
   files:
     - path: /etc/sysctl.d/20-silence-audit.conf
       mode: 0644
@@ -91,14 +95,7 @@ storage:
     - path: /etc/docker/compose/home-server/docker-compose.yml
       mode: 0700
       contents:
-        inline: |
-          version: '3'
-          services:
-            test:
-              image: nginx
-              restart: always
-              ports:
-                - "8080:80"
+        local: home-server-docker-compose.yml
 systemd:
   units:
     - name: rpm-ostree-install.service
