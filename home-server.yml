@@ -19,13 +19,13 @@ storage:
         - number: 1
           label: raid.0.2
           start_mib: 0
-    - device: /dev/disk/by-id/scsi-SATA_WDC_WD101EDBZ-11_VCHSZ4WP
+    - device: /dev/disk/by-id/scsi-SATA_TOSHIBA_MG06ACA1_90H0A1HTFKQE
       wipe_table: false
       partitions:
         - number: 1
           label: raid.1.1
           start_mib: 0
-    - device: /dev/disk/by-id/scsi-SATA_TOSHIBA_MG06ACA1_90H0A1HTFKQE
+    - device: /dev/disk/by-id/scsi-SATA_WDC_WD101EDBZ-11_VCHSZ4WP
       wipe_table: false
       partitions:
         - number: 1
@@ -39,31 +39,34 @@ storage:
           start_mib: 0
   raid:
     - name: media
-      level: stripe
+      level: raid0
       devices:
         - /dev/disk/by-partlabel/raid.0.1
         - /dev/disk/by-partlabel/raid.0.2
-    - name: data
-      level: mirror
+    - name: backup
+      level: raid1
       devices:
         - /dev/disk/by-partlabel/raid.1.1
         - /dev/disk/by-partlabel/raid.1.2
   filesystems:
-    - device: /dev/md/media
-      path: /var/lib/media
+    - path: /var/lib/media
+      device: /dev/md/media
+      format: ext4
       label: MEDIA
+      wipe_filesystem: false
       with_mount_unit: true
+    - path: /var/lib/backup
+      device: /dev/md/backup
       format: ext4
-    - device: /dev/md/data
-      path: /var/lib/data
-      label: DATA
-      with_mount_unit: true
-      format: ext4
-    - device: /dev/disk/by-partlabel/hdd.1tb
-      path: /var/lib/volumes
-      label: VOLUMES
-      with_mount_unit: true
+      label: BACKUP
+      wipe_filesystem: false
+      with_mount_unit: false
+    - path: /var/lib/volumes
+      device: /dev/disk/by-partlabel/hdd.1tb
       format: btrfs
+      label: VOLUMES
+      wipe_filesystem: false
+      with_mount_unit: true
       mount_options:
         - compress=zstd
         - noatime
@@ -97,6 +100,16 @@ storage:
         local: home-server-docker-compose.yml
 systemd:
   units:
+    - name: var-lib-backup.mount
+      enabled: true
+      contents: |
+        [Mount]
+        What=/dev/md/backup
+        Where=/var/lib/backup
+        Type=ext4
+
+        [Install]
+        WantedBy=local-fs.target
     - name: rpm-ostree-install.service
       enabled: true
       contents: |

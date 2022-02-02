@@ -146,13 +146,14 @@ visited https://github.com/coreos/coreos-assembler and adjust the code to work w
     source cosa.sh
     mkdir build-src
     cd build-src
-    mkdir -p ./src/config/live/isolinux
-    echo 'sudo coreos-installer install /dev/sda --ignition-url http://10.0.0.21:8000/home-server.ign --insecure-ignition' > ./src/config/live/isolinux/home-server-install
-    chmod +x ./src/config/live/isolinux/home-server-install
     cosa init https://github.com/coreos/fedora-coreos-config --force
+    cosa fetch
     cosa build
     cosa buildextend-metal
     cosa buildextend-metal4k
+    mkdir -p ./src/config/live/isolinux
+    echo 'sudo coreos-installer install /dev/sda --ignition-url http://10.0.0.21:8000/home-server.ign --insecure-ignition' > ./src/config/live/isolinux/home-server-install
+    chmod +x ./src/config/live/isolinux/home-server-install
     cosa buildextend-live
 
 Burn the ISO to a USB drive
@@ -161,7 +162,7 @@ Burn the ISO to a USB drive
 
  Now when we boot from the usb justed burned it will have the command present here:
 
-    /run/media/iso/isolinux/home-server-install
+    /media/iso/isolinux/home-server-install
 
 Misc. Commands
 --------------
