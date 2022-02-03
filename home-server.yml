@@ -98,6 +98,10 @@ storage:
       mode: 0700
       contents:
         local: home-server-docker-compose.yml
+    - path: /usr/local/bin/set_wakealarm.sh
+      mode: 0700
+      contents:
+        local: set_wakealarm.sh
 systemd:
   units:
     - name: var-lib-backup.mount
@@ -128,6 +132,33 @@ systemd:
 
         [Install]
         WantedBy=multi-user.target
+    - name: set-wake-alarm-and-shutdown.service
+      enabled: true
+      contents: |
+        [Unit]
+        Description=Calls the set_wakealarm.sh script and then schedules a system shutdown
+        Wants=set-wake-alarm-and-shutdown.timer
+        ConditionPathExists=/usr/local/bin/set_wakealarm.sh
+
+        [Service]
+        Type=oneshot
+        ExecPreStart=/usr/local/bin/set_wakealarm.sh
+        ExecStart=/usr/sbin/shutdown -h +1
+
+        [Install]
+        WantedBy=multi-user.target
+    - name: set-wake-alarm-and-shutdown.timer
+      enabled: true
+      contents: |
+        [Unit]
+        Description=Timer for the set-wake-alarm-and-shutdown.service
+
+        [Timer]
+        Unit=set-wake-alarm-and-shutdown.service
+        OnCalendar=*-*-* 10:30:00
+
+        [Install]
+        WantedBy=timers.target
     - name: docker.compose.up.service
       enabled: true
       contents: |
