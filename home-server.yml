@@ -60,7 +60,7 @@ storage:
       format: ext4
       label: BACKUP
       wipe_filesystem: false
-      with_mount_unit: false
+      with_mount_unit: true
     - path: /var/lib/volumes
       device: /dev/disk/by-partlabel/hdd.1tb
       format: btrfs
@@ -104,16 +104,6 @@ storage:
         local: set_wakealarm.sh
 systemd:
   units:
-    - name: var-lib-backup.mount
-      enabled: true
-      contents: |
-        [Mount]
-        What=/dev/md/backup
-        Where=/var/lib/backup
-        Type=ext4
-
-        [Install]
-        WantedBy=local-fs.target
     - name: rpm-ostree-install.service
       enabled: true
       contents: |
@@ -133,7 +123,7 @@ systemd:
         [Install]
         WantedBy=multi-user.target
     - name: set-wake-alarm-and-shutdown.service
-      enabled: true
+      enabled: false
       contents: |
         [Unit]
         Description=Calls the set_wakealarm.sh script and then schedules a system shutdown
