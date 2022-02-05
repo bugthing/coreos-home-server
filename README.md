@@ -178,4 +178,8 @@ The inginition file did not set the hostname, so I had to do the following but I
 CoreOS doc here: https://docs.fedoraproject.org/en-US/fedora-coreos/running-containers/
 Ignition files: https://coreos.github.io/ignition/examples/#create-a-raid-enabled-data-volume
 
+To create a systemd unit, you can use systemctl
+
+      systemctl edit --force --full var-lib-media.mount
+
 
