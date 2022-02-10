@@ -31,6 +31,8 @@ storage:
       devices:
         - /dev/disk/by-partlabel/raid.1.1
         - /dev/disk/by-partlabel/raid.1.2
+      options:
+        - --assume-clean
   filesystems:
     - path: /var/lib/backup
       device: /dev/md/backup
