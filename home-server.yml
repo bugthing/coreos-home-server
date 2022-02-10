@@ -81,12 +81,9 @@ systemd:
 
         [Install]
         WantedBy=local-fs.target
-    - name: var-lib-backup.mount
+    - name: var-lib-media.mount
       enabled: true
       contents: |
-        [Unit]
-        Description=Bunch of disks
-
         [Mount]
         What=/dev/disk/by-label/BTRFS-RAID0
         Where=/var/lib/media
