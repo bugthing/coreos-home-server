@@ -182,4 +182,89 @@ To create a systemd unit, you can use systemctl
 
       systemctl edit --force --full var-lib-media.mount
 
+Docker Compose
+--------------
+
+The containers I want for my home server are described in a docker compose yaml file.
+Due to coreos having SELinux I have discovered I need to add `:z` (or `:Z` to not share) to the end of volumes mounts.
+
+      systemctl restart docker.compose.up
+      systemctl stop docker.compose.up
+      systemctl start docker.compose.up
+      vi /etc/docker/compose/home-server/docker-compose.yml
+
+### vpn
+
+A container that uses OpenVPN to connect to a vpn server. The container is used by other container to route traffic through the vpn.
+
+Config is here:
+
+      /var/lib/volumes/vpn/vpn.conf -> /vpn/vpn.conf
+
+### transmission
+
+This container is networked up to the vpn container.
+
+      network_mode: container:vpn
+
+It is configured to monitor certain directory for .torrent files, which it will download and dump the result into another directory.
+
+      /var/lib/volumes/transmission/daemon/finished -> /var/lib/transmission-daemon/finished : this is where downloaded files go.
+      /var/lib/volumes/transmission/daemon/incomplete -> /var/lib/transmission-daemon/incomplete : this is where currently downloading files go.
+      /var/lib/volumes/transmission/daemon/torrents -> /var/lib/transmission-daemon/torrents : this is monitored for new .torrent files.
+      /var/lib/volumes/transmission/daemon/info -> /var/lib/transmission-daemon/info : this is a transmission application folder
+      /var/lib/volumes/transmission/daemon/downloads -> /var/lib/transmission-daemon/downloads : this is the default folder, it must be created but hopefully wont be used.
+
+Directory for sickchill's torrents, downloads etc. This is where sickchill can tell transmission to download torrents to. This volume
+is then mounted into the sickchill container, where it can postprocess the results.
+
+      /var/lib/volumes/transmission/sickchill -> /sickchill
+
+It also has an http interface on a certain port. This provides a UI and means it can be instructed by clients (sickbeard) to download and place result into specific directory.
+
+      http://0.0.0.0:9091/transmission/web/
+
+### sickchill
+
+This container is networked up to the vpn container.
+
+      network_mode: container:vpn
+
+It can obtain torrents, talk to transmission and postprocess the results. To do so it shares volumes with the transmission and jellyfin container.
+
+      /var/lib/media/Video/TV -> /shows : this is where to store TV video files. Jellyfin also uses this directory.
+      /var/lib/volumes/transmission/sickchill -> /transmission : this is where transmission stores its results for sickchill. We can postprocess the results from here.
+
+### jellyfin
+
+This container is a jellyfin install making use of media mounted in a volume backed by a large media share
+
+      /var/lib/media/Video/TV -> /media/TV
+      /var/lib/media/Video/Movies -> /media/Movies
+      /var/lib/media/Video/Kids -> /media/Kids
+      /var/lib/media/Audio/All -> /media/Music
+
+### autorestic
+
+Backup and restore solution. Configured with a yaml file.
+
+      /var/lib/volumes/autorestic/config/autorestic.yml -> /config/autorestic.yml
+
+Useful commands:
+
+Start shell in contatiner:
+
+      docker-compose run autorestic sh
+
+List snapshots - display what has been backed up to the specified backend
+
+      autorestic --config /config/autorestic.yml --verbose --backend raid exec snapshots
+
+Restore a backup - restore a backup from the specified backend
+
+      autorestic --config /config/autorestic.yml --verbose restore -l media --to /
+
+Exec cron - to be run from something like cron
+
+      autorestic --config /config/autorestic.yml --verbose cron
 
