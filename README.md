@@ -268,3 +268,7 @@ Exec cron - to be run from something like cron
 
       autorestic --config /config/autorestic.yml --verbose cron
 
+Forget some older backups
+
+      autorestic --config /config/autorestic.yml --verbose forget -l media --prune
+
